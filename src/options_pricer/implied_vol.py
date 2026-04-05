@@ -13,6 +13,9 @@ def implied_volatility(
     tolerance: float = 1e-6,
     max_iterations: int = 50,
 ) -> float:
+    if market_price <= _intrinsic_value(spec) + tolerance:
+        return 0.0
+
     sigma = initial_guess
     for _ in range(max_iterations):
         trial_spec = OptionSpec(
@@ -29,6 +32,15 @@ def implied_volatility(
             return sigma
 
         vega = greeks(trial_spec).vega
+        if vega <= tolerance:
+            return max(sigma, 0.0)
         sigma -= diff / vega
+        sigma = max(sigma, tolerance)
 
     return sigma
+
+
+def _intrinsic_value(spec: OptionSpec) -> float:
+    if spec.option_type == "call":
+        return max(spec.spot - spec.strike, 0.0)
+    return max(spec.strike - spec.spot, 0.0)

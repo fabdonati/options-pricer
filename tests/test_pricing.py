@@ -48,3 +48,17 @@ def test_monte_carlo_tracks_analytic_price(vanilla_call: OptionSpec) -> None:
     simulated_price = monte_carlo_price(vanilla_call, paths=25_000, seed=7)
 
     assert simulated_price == pytest.approx(analytic_price, abs=0.35)
+
+
+def test_implied_volatility_returns_zero_for_intrinsic_value_prices() -> None:
+    spec = OptionSpec(
+        spot=100.0,
+        strike=150.0,
+        rate=0.01,
+        volatility=0.2,
+        maturity=0.05,
+        option_type="call",
+    )
+
+    assert black_scholes_price(spec) == 0.0
+    assert implied_volatility(0.0, spec, initial_guess=1.5) == pytest.approx(0.0)
