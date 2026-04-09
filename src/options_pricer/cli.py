@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from typing import cast
 
+from options_pricer.binomial_tree import binomial_tree_price
 from options_pricer.black_scholes import black_scholes_price
 from options_pricer.implied_vol import implied_volatility
 from options_pricer.models import OptionSpec, OptionType
@@ -18,9 +19,17 @@ def main() -> None:
         subparsers.add_parser("iv", help="Infer implied volatility from a market price")
     )
     iv_parser.add_argument("--market-price", type=float, required=True)
-    compare_parser = _add_common_option_args(
-        subparsers.add_parser("compare", help="Compare Black-Scholes and Monte Carlo prices")
+    tree_parser = _add_common_option_args(
+        subparsers.add_parser("tree", help="Price an option with a binomial tree")
     )
+    tree_parser.add_argument("--steps", type=int, default=200)
+    compare_parser = _add_common_option_args(
+        subparsers.add_parser(
+            "compare",
+            help="Compare Black-Scholes, binomial tree, and Monte Carlo prices",
+        )
+    )
+    compare_parser.add_argument("--steps", type=int, default=200)
     compare_parser.add_argument("--paths", type=int, default=20_000)
 
     args = parser.parse_args()
@@ -30,12 +39,17 @@ def main() -> None:
         print(f"{black_scholes_price(spec):.6f}")
     elif args.command == "iv":
         print(f"{implied_volatility(args.market_price, spec):.6f}")
+    elif args.command == "tree":
+        print(f"{binomial_tree_price(spec, steps=args.steps):.6f}")
     else:
         analytic = black_scholes_price(spec)
+        tree_price = binomial_tree_price(spec, steps=args.steps)
         simulated = monte_carlo_price(spec, paths=args.paths)
         print(f"Black-Scholes: {analytic:.6f}")
+        print(f"Binomial tree: {tree_price:.6f}")
         print(f"Monte Carlo: {simulated:.6f}")
-        print(f"Difference: {simulated - analytic:.6f}")
+        print(f"Tree - Black-Scholes: {tree_price - analytic:.6f}")
+        print(f"Monte Carlo - Black-Scholes: {simulated - analytic:.6f}")
 
 
 def _add_common_option_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from options_pricer.binomial_tree import binomial_tree_price
 from options_pricer.black_scholes import black_scholes_price
 from options_pricer.greeks import greeks
 from options_pricer.implied_vol import implied_volatility
@@ -48,6 +49,42 @@ def test_monte_carlo_tracks_analytic_price(vanilla_call: OptionSpec) -> None:
     simulated_price = monte_carlo_price(vanilla_call, paths=25_000, seed=7)
 
     assert simulated_price == pytest.approx(analytic_price, abs=0.35)
+
+
+def test_binomial_tree_tracks_analytic_price_for_call(vanilla_call: OptionSpec) -> None:
+    analytic_price = black_scholes_price(vanilla_call)
+    tree_price = binomial_tree_price(vanilla_call, steps=200)
+
+    assert tree_price == pytest.approx(analytic_price, abs=0.05)
+
+
+def test_binomial_tree_tracks_analytic_price_for_put() -> None:
+    put = OptionSpec(
+        spot=100.0,
+        strike=100.0,
+        rate=0.05,
+        volatility=0.2,
+        maturity=1.0,
+        option_type="put",
+    )
+
+    analytic_price = black_scholes_price(put)
+    tree_price = binomial_tree_price(put, steps=200)
+
+    assert tree_price == pytest.approx(analytic_price, abs=0.05)
+
+
+def test_binomial_tree_converges_toward_black_scholes(vanilla_call: OptionSpec) -> None:
+    analytic_price = black_scholes_price(vanilla_call)
+    coarse_error = abs(binomial_tree_price(vanilla_call, steps=25) - analytic_price)
+    fine_error = abs(binomial_tree_price(vanilla_call, steps=200) - analytic_price)
+
+    assert fine_error < coarse_error
+
+
+def test_binomial_tree_rejects_non_positive_step_counts(vanilla_call: OptionSpec) -> None:
+    with pytest.raises(ValueError, match="steps must be positive"):
+        binomial_tree_price(vanilla_call, steps=0)
 
 
 def test_implied_volatility_returns_zero_for_intrinsic_value_prices() -> None:

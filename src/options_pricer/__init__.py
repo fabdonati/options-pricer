@@ -1,5 +1,6 @@
 """Options pricer."""
 
+from options_pricer.binomial_tree import binomial_tree_price
 from options_pricer.black_scholes import black_scholes_price
 from options_pricer.greeks import Greeks, greeks
 from options_pricer.implied_vol import implied_volatility
@@ -10,6 +11,7 @@ __all__ = [
     "Greeks",
     "OptionSpec",
     "black_scholes_price",
+    "binomial_tree_price",
     "greeks",
     "implied_volatility",
     "monte_carlo_price",
