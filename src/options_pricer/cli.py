@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 from typing import cast
 
 from options_pricer.binomial_tree import binomial_tree_price
 from options_pricer.black_scholes import black_scholes_price
 from options_pricer.implied_vol import implied_volatility
 from options_pricer.models import OptionSpec, OptionType
-from options_pricer.monte_carlo import monte_carlo_price
+from options_pricer.reporting import build_comparison_report, render_text_report, write_csv_report
 
 
 def main() -> None:
@@ -31,6 +32,8 @@ def main() -> None:
     )
     compare_parser.add_argument("--steps", type=int, default=200)
     compare_parser.add_argument("--paths", type=int, default=20_000)
+    compare_parser.add_argument("--market-price", type=float)
+    compare_parser.add_argument("--report-output", type=Path)
 
     args = parser.parse_args()
     spec = _spec_from_args(args)
@@ -42,14 +45,15 @@ def main() -> None:
     elif args.command == "tree":
         print(f"{binomial_tree_price(spec, steps=args.steps):.6f}")
     else:
-        analytic = black_scholes_price(spec)
-        tree_price = binomial_tree_price(spec, steps=args.steps)
-        simulated = monte_carlo_price(spec, paths=args.paths)
-        print(f"Black-Scholes: {analytic:.6f}")
-        print(f"Binomial tree: {tree_price:.6f}")
-        print(f"Monte Carlo: {simulated:.6f}")
-        print(f"Tree - Black-Scholes: {tree_price - analytic:.6f}")
-        print(f"Monte Carlo - Black-Scholes: {simulated - analytic:.6f}")
+        report = build_comparison_report(
+            spec,
+            tree_steps=args.steps,
+            monte_carlo_paths=args.paths,
+            market_price=args.market_price,
+        )
+        if args.report_output is not None:
+            write_csv_report(report, args.report_output)
+        print(render_text_report(report))
 
 
 def _add_common_option_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:

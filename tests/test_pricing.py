@@ -8,6 +8,7 @@ from options_pricer.greeks import greeks
 from options_pricer.implied_vol import implied_volatility
 from options_pricer.models import OptionSpec
 from options_pricer.monte_carlo import monte_carlo_price
+from options_pricer.reporting import build_comparison_report
 
 
 @pytest.fixture
@@ -184,3 +185,31 @@ def test_implied_volatility_returns_zero_for_intrinsic_value_prices() -> None:
 
     assert black_scholes_price(spec) == 0.0
     assert implied_volatility(0.0, spec, initial_guess=1.5) == pytest.approx(0.0)
+
+
+def test_comparison_report_uses_black_scholes_as_baseline(vanilla_call: OptionSpec) -> None:
+    report = build_comparison_report(vanilla_call, tree_steps=150, monte_carlo_paths=5_000)
+
+    assert report.price_rows[0].model == "Black-Scholes"
+    assert report.price_rows[0].absolute_error_vs_black_scholes == 0.0
+    assert report.price_rows[0].relative_error_vs_black_scholes == 0.0
+    assert report.price_rows[1].absolute_error_vs_black_scholes >= 0.0
+    assert report.price_rows[1].relative_error_vs_black_scholes >= 0.0
+    assert report.price_rows[2].absolute_error_vs_black_scholes >= 0.0
+    assert report.price_rows[2].relative_error_vs_black_scholes >= 0.0
+
+
+def test_comparison_report_market_section_round_trips_implied_vol(
+    vanilla_call: OptionSpec,
+) -> None:
+    market_price = black_scholes_price(vanilla_call)
+    report = build_comparison_report(
+        vanilla_call,
+        tree_steps=150,
+        monte_carlo_paths=5_000,
+        market_price=market_price,
+    )
+
+    assert report.market_comparison is not None
+    assert report.market_comparison.implied_volatility == pytest.approx(0.2, rel=1e-6)
+    assert report.market_comparison.residual_vs_black_scholes == pytest.approx(0.0, abs=1e-9)

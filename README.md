@@ -17,7 +17,7 @@ and useful in interviews or small research workflows.
 - Greeks computation
 - Implied-volatility solving with Newton-Raphson
 - Monte Carlo pricing baseline for comparison
-- CLI for pricing, implied vol, and model comparisons
+- CLI for pricing, implied vol, and model comparison reports
 
 ## Install
 
@@ -59,6 +59,18 @@ Compare analytic, tree, and Monte Carlo prices:
 optprice compare --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000
 ```
 
+Compare models for a dividend-paying option and include an implied-vol section from a market price:
+
+```bash
+optprice compare --spot 100 --strike 100 --rate 0.05 --dividend-yield 0.02 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000 --market-price 9.227005508154036
+```
+
+Write the comparison report to CSV while still printing the terminal summary:
+
+```bash
+optprice compare --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000 --report-output reports/compare.csv
+```
+
 ## Package usage
 
 ```python
@@ -85,3 +97,4 @@ sigma = implied_volatility(price, spec)
 - Dividend support is modeled as a continuous yield input rather than sourced reference data
 - Binomial tree support is limited to European exercise in this stage
 - Monte Carlo is designed as a comparison baseline, not a low-latency engine
+- Runtime values in `compare` are rough in-process diagnostics, not benchmark-quality timings

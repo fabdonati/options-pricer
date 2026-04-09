@@ -5,6 +5,7 @@
 - Keep the core formulas readable and testable
 - Separate pricing, Greeks, and root-finding concerns
 - Provide both lattice and simulation baselines for sanity checks
+- Keep model-comparison reporting in a thin layer above the pricing functions
 
 ## Components
 
@@ -14,6 +15,7 @@
 - `greeks.py`: first- and second-order sensitivities
 - `implied_vol.py`: Newton-Raphson solver
 - `monte_carlo.py`: terminal-price simulation
+- `reporting.py`: model-comparison report builder and CSV export
 - `cli.py`: shell-friendly entrypoint
 
 ## Numerical assumptions
@@ -31,3 +33,11 @@ The repo uses two kinds of checks:
 - reference-value tests against well-known Black-Scholes outputs
 - binomial-tree convergence checks against Black-Scholes
 - Monte Carlo comparisons to make sure the simulation path stays in the right neighborhood
+- CLI comparison-report checks for terminal output and CSV export
+
+## Comparison report conventions
+
+- Black-Scholes is the reference baseline for model-error rows
+- Greeks in the report are analytic Black-Scholes Greeks
+- Implied volatility is only shown when the caller provides a market price
+- Runtime in the report is a rough CLI diagnostic, not a benchmark-quality measurement
