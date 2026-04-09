@@ -14,4 +14,4 @@ class OptionSpec:
     volatility: float
     maturity: float
     option_type: OptionType
-
+    dividend_yield: float = 0.0

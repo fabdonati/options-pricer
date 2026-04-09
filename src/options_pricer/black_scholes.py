@@ -9,9 +9,10 @@ from options_pricer.models import OptionSpec
 def black_scholes_price(spec: OptionSpec) -> float:
     d1_value = d1(spec)
     d2_value = d2(spec)
+    discounted_spot = spec.spot * exp(-spec.dividend_yield * spec.maturity)
     discounted_strike = spec.strike * exp(-spec.rate * spec.maturity)
 
     if spec.option_type == "call":
-        return (spec.spot * norm_cdf(d1_value)) - (discounted_strike * norm_cdf(d2_value))
+        return (discounted_spot * norm_cdf(d1_value)) - (discounted_strike * norm_cdf(d2_value))
 
-    return (discounted_strike * norm_cdf(-d2_value)) - (spec.spot * norm_cdf(-d1_value))
+    return (discounted_strike * norm_cdf(-d2_value)) - (discounted_spot * norm_cdf(-d1_value))

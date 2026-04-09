@@ -26,6 +26,20 @@ def test_black_scholes_price_matches_reference_value(vanilla_call: OptionSpec) -
     assert black_scholes_price(vanilla_call) == pytest.approx(10.450583572185565)
 
 
+def test_black_scholes_price_supports_dividend_yield() -> None:
+    spec = OptionSpec(
+        spot=100.0,
+        strike=100.0,
+        rate=0.05,
+        volatility=0.2,
+        maturity=1.0,
+        option_type="call",
+        dividend_yield=0.02,
+    )
+
+    assert black_scholes_price(spec) == pytest.approx(9.227005508154036)
+
+
 def test_greeks_match_reference_values(vanilla_call: OptionSpec) -> None:
     result = greeks(vanilla_call)
 
@@ -36,10 +50,47 @@ def test_greeks_match_reference_values(vanilla_call: OptionSpec) -> None:
     assert result.rho == pytest.approx(53.23248155, rel=1e-6)
 
 
+def test_greeks_support_dividend_yield() -> None:
+    spec = OptionSpec(
+        spot=100.0,
+        strike=100.0,
+        rate=0.05,
+        volatility=0.2,
+        maturity=1.0,
+        option_type="call",
+        dividend_yield=0.02,
+    )
+
+    result = greeks(spec)
+
+    assert result.delta == pytest.approx(0.5868511461, rel=1e-6)
+    assert result.gamma == pytest.approx(0.0189505788, rel=1e-6)
+    assert result.vega == pytest.approx(37.90115751, rel=1e-6)
+    assert result.theta == pytest.approx(-5.089318914, rel=1e-6)
+    assert result.rho == pytest.approx(49.458109105, rel=1e-6)
+
+
 def test_implied_volatility_round_trips_market_price(vanilla_call: OptionSpec) -> None:
     market_price = black_scholes_price(vanilla_call)
 
     implied_vol = implied_volatility(market_price, vanilla_call, initial_guess=0.3)
+
+    assert implied_vol == pytest.approx(0.2, rel=1e-6)
+
+
+def test_implied_volatility_round_trips_with_dividend_yield() -> None:
+    spec = OptionSpec(
+        spot=100.0,
+        strike=100.0,
+        rate=0.05,
+        volatility=0.2,
+        maturity=1.0,
+        option_type="call",
+        dividend_yield=0.02,
+    )
+
+    market_price = black_scholes_price(spec)
+    implied_vol = implied_volatility(market_price, spec, initial_guess=0.3)
 
     assert implied_vol == pytest.approx(0.2, rel=1e-6)
 
@@ -51,9 +102,43 @@ def test_monte_carlo_tracks_analytic_price(vanilla_call: OptionSpec) -> None:
     assert simulated_price == pytest.approx(analytic_price, abs=0.35)
 
 
+def test_monte_carlo_tracks_dividend_adjusted_analytic_price() -> None:
+    spec = OptionSpec(
+        spot=100.0,
+        strike=100.0,
+        rate=0.05,
+        volatility=0.2,
+        maturity=1.0,
+        option_type="call",
+        dividend_yield=0.02,
+    )
+
+    analytic_price = black_scholes_price(spec)
+    simulated_price = monte_carlo_price(spec, paths=25_000, seed=7)
+
+    assert simulated_price == pytest.approx(analytic_price, abs=0.35)
+
+
 def test_binomial_tree_tracks_analytic_price_for_call(vanilla_call: OptionSpec) -> None:
     analytic_price = black_scholes_price(vanilla_call)
     tree_price = binomial_tree_price(vanilla_call, steps=200)
+
+    assert tree_price == pytest.approx(analytic_price, abs=0.05)
+
+
+def test_binomial_tree_tracks_dividend_adjusted_analytic_price() -> None:
+    spec = OptionSpec(
+        spot=100.0,
+        strike=100.0,
+        rate=0.05,
+        volatility=0.2,
+        maturity=1.0,
+        option_type="call",
+        dividend_yield=0.02,
+    )
+
+    analytic_price = black_scholes_price(spec)
+    tree_price = binomial_tree_price(spec, steps=200)
 
     assert tree_price == pytest.approx(analytic_price, abs=0.05)
 

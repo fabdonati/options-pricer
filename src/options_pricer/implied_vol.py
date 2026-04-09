@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from math import exp
+
 from options_pricer.black_scholes import black_scholes_price
 from options_pricer.greeks import greeks
 from options_pricer.models import OptionSpec
@@ -25,6 +27,7 @@ def implied_volatility(
             volatility=sigma,
             maturity=spec.maturity,
             option_type=spec.option_type,
+            dividend_yield=spec.dividend_yield,
         )
         price = black_scholes_price(trial_spec)
         diff = price - market_price
@@ -41,6 +44,8 @@ def implied_volatility(
 
 
 def _intrinsic_value(spec: OptionSpec) -> float:
+    discounted_spot = spec.spot * exp(-spec.dividend_yield * spec.maturity)
+    discounted_strike = spec.strike * exp(-spec.rate * spec.maturity)
     if spec.option_type == "call":
-        return max(spec.spot - spec.strike, 0.0)
-    return max(spec.strike - spec.spot, 0.0)
+        return max(discounted_spot - discounted_strike, 0.0)
+    return max(discounted_strike - discounted_spot, 0.0)

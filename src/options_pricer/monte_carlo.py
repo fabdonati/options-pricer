@@ -8,7 +8,7 @@ from options_pricer.models import OptionSpec
 
 def monte_carlo_price(spec: OptionSpec, *, paths: int = 10_000, seed: int = 42) -> float:
     rng = random.Random(seed)
-    drift = (spec.rate - 0.5 * spec.volatility**2) * spec.maturity
+    drift = (spec.rate - spec.dividend_yield - 0.5 * spec.volatility**2) * spec.maturity
     diffusion_scale = spec.volatility * sqrt(spec.maturity)
     discounted_payoff = 0.0
 

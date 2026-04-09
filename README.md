@@ -2,7 +2,7 @@
 
 `options-pricer` is a small Python library for pricing vanilla European options with
 analytic Black-Scholes formulas, a Cox-Ross-Rubinstein binomial tree, and Monte Carlo
-simulation.
+simulation. The pricing inputs include an optional continuous dividend yield.
 
 ## Why this project
 
@@ -35,6 +35,12 @@ Price a call:
 optprice price --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call
 ```
 
+Price a dividend-paying call:
+
+```bash
+optprice price --spot 100 --strike 100 --rate 0.05 --dividend-yield 0.02 --volatility 0.2 --maturity 1 --type call
+```
+
 Infer implied volatility:
 
 ```bash
@@ -65,6 +71,7 @@ spec = OptionSpec(
     volatility=0.2,
     maturity=1.0,
     option_type="call",
+    dividend_yield=0.02,
 )
 
 price = black_scholes_price(spec)
@@ -75,6 +82,6 @@ sigma = implied_volatility(price, spec)
 ## Limitations
 
 - v0.1.0 only supports vanilla European options
-- No dividends or stochastic-volatility extensions
+- Dividend support is modeled as a continuous yield input rather than sourced reference data
 - Binomial tree support is limited to European exercise in this stage
 - Monte Carlo is designed as a comparison baseline, not a low-latency engine

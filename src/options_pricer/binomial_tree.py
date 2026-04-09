@@ -11,7 +11,7 @@ def binomial_tree_price(spec: OptionSpec, *, steps: int = 200) -> float:
     if spec.maturity <= 0.0:
         return _payoff(spec.spot, spec.strike, spec.option_type)
     if spec.volatility <= 0.0:
-        terminal_spot = spec.spot * exp(spec.rate * spec.maturity)
+        terminal_spot = spec.spot * exp((spec.rate - spec.dividend_yield) * spec.maturity)
         payoff = _payoff(terminal_spot, spec.strike, spec.option_type)
         return exp(-spec.rate * spec.maturity) * payoff
 
@@ -19,7 +19,7 @@ def binomial_tree_price(spec: OptionSpec, *, steps: int = 200) -> float:
     up = exp(spec.volatility * sqrt(dt))
     down = 1.0 / up
     discount = exp(-spec.rate * dt)
-    probability = (exp(spec.rate * dt) - down) / (up - down)
+    probability = (exp((spec.rate - spec.dividend_yield) * dt) - down) / (up - down)
 
     values = [
         _payoff(

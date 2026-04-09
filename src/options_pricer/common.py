@@ -15,7 +15,7 @@ def norm_pdf(value: float) -> float:
 
 def d1(spec: OptionSpec) -> float:
     numerator = log(spec.spot / spec.strike) + (
-        (spec.rate + 0.5 * spec.volatility**2) * spec.maturity
+        (spec.rate - spec.dividend_yield + 0.5 * spec.volatility**2) * spec.maturity
     )
     denominator = spec.volatility * sqrt(spec.maturity)
     return numerator / denominator

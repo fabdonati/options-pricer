@@ -56,6 +56,7 @@ def _add_common_option_args(parser: argparse.ArgumentParser) -> argparse.Argumen
     parser.add_argument("--spot", type=float, required=True)
     parser.add_argument("--strike", type=float, required=True)
     parser.add_argument("--rate", type=float, required=True)
+    parser.add_argument("--dividend-yield", type=float, default=0.0)
     parser.add_argument("--volatility", type=float, required=True)
     parser.add_argument("--maturity", type=float, required=True)
     parser.add_argument("--type", choices=("call", "put"), required=True)
@@ -68,6 +69,7 @@ def _spec_from_args(args: argparse.Namespace) -> OptionSpec:
         spot=args.spot,
         strike=args.strike,
         rate=args.rate,
+        dividend_yield=args.dividend_yield,
         volatility=args.volatility,
         maturity=args.maturity,
         option_type=_as_option_type(option_type),

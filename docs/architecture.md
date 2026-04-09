@@ -20,8 +20,9 @@
 
 - Black-Scholes dynamics with constant volatility
 - Continuous compounding for the risk-free rate
+- Optional continuous dividend yield
 - European exercise only
-- No dividends in v0.1.0
+- No discrete-dividend schedule support
 
 ## Validation approach
 

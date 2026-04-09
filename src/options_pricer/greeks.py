@@ -21,23 +21,26 @@ def greeks(spec: OptionSpec) -> Greeks:
     d2_value = d2(spec)
     sqrt_t = sqrt(spec.maturity)
     pdf = norm_pdf(d1_value)
+    discounted_spot = spec.spot * exp(-spec.dividend_yield * spec.maturity)
     discounted_strike = spec.strike * exp(-spec.rate * spec.maturity)
 
-    gamma = pdf / (spec.spot * spec.volatility * sqrt_t)
-    vega = spec.spot * pdf * sqrt_t
+    gamma = exp(-spec.dividend_yield * spec.maturity) * pdf / (spec.spot * spec.volatility * sqrt_t)
+    vega = discounted_spot * pdf * sqrt_t
 
     if spec.option_type == "call":
-        delta = norm_cdf(d1_value)
+        delta = exp(-spec.dividend_yield * spec.maturity) * norm_cdf(d1_value)
         theta = (
-            -(spec.spot * pdf * spec.volatility) / (2.0 * sqrt_t)
+            -(discounted_spot * pdf * spec.volatility) / (2.0 * sqrt_t)
             - spec.rate * discounted_strike * norm_cdf(d2_value)
+            + spec.dividend_yield * discounted_spot * norm_cdf(d1_value)
         )
         rho = spec.strike * spec.maturity * exp(-spec.rate * spec.maturity) * norm_cdf(d2_value)
     else:
-        delta = norm_cdf(d1_value) - 1.0
+        delta = exp(-spec.dividend_yield * spec.maturity) * (norm_cdf(d1_value) - 1.0)
         theta = (
-            -(spec.spot * pdf * spec.volatility) / (2.0 * sqrt_t)
+            -(discounted_spot * pdf * spec.volatility) / (2.0 * sqrt_t)
             + spec.rate * discounted_strike * norm_cdf(-d2_value)
+            - spec.dividend_yield * discounted_spot * norm_cdf(-d1_value)
         )
         rho = -spec.strike * spec.maturity * exp(-spec.rate * spec.maturity) * norm_cdf(-d2_value)
 
