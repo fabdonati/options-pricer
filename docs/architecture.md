@@ -40,4 +40,5 @@ The repo uses two kinds of checks:
 - Black-Scholes is the reference baseline for model-error rows
 - Greeks in the report are analytic Black-Scholes Greeks
 - Implied volatility is only shown when the caller provides a market price
+- Monte Carlo rows can be made reproducible from the CLI via an explicit seed
 - Runtime in the report is a rough CLI diagnostic, not a benchmark-quality measurement

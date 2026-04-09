@@ -32,6 +32,7 @@ def main() -> None:
     )
     compare_parser.add_argument("--steps", type=int, default=200)
     compare_parser.add_argument("--paths", type=int, default=20_000)
+    compare_parser.add_argument("--seed", type=int, default=42)
     compare_parser.add_argument("--market-price", type=float)
     compare_parser.add_argument("--report-output", type=Path)
 
@@ -49,6 +50,7 @@ def main() -> None:
             spec,
             tree_steps=args.steps,
             monte_carlo_paths=args.paths,
+            monte_carlo_seed=args.seed,
             market_price=args.market_price,
         )
         if args.report_output is not None:

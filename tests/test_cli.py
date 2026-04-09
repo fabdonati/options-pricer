@@ -89,6 +89,8 @@ def test_compare_command_prints_structured_report_sections() -> None:
             "150",
             "--paths",
             "5000",
+            "--seed",
+            "7",
         ],
         check=True,
         capture_output=True,
@@ -101,6 +103,7 @@ def test_compare_command_prints_structured_report_sections() -> None:
     assert "Black-Scholes" in result.stdout
     assert "Binomial tree" in result.stdout
     assert "Monte Carlo" in result.stdout
+    assert "Monte Carlo seed: 7" in result.stdout
 
 
 def test_compare_command_accepts_dividend_yield() -> None:
@@ -128,6 +131,8 @@ def test_compare_command_accepts_dividend_yield() -> None:
             "150",
             "--paths",
             "5000",
+            "--seed",
+            "7",
         ],
         check=True,
         capture_output=True,
@@ -161,6 +166,8 @@ def test_compare_command_accepts_market_price() -> None:
             "150",
             "--paths",
             "5000",
+            "--seed",
+            "7",
             "--market-price",
             "10.450583572185565",
         ],
@@ -197,6 +204,8 @@ def test_compare_command_writes_csv_report(tmp_path: Path) -> None:
             "150",
             "--paths",
             "5000",
+            "--seed",
+            "7",
             "--market-price",
             "10.450583572185565",
             "--report-output",
@@ -212,6 +221,7 @@ def test_compare_command_writes_csv_report(tmp_path: Path) -> None:
         rows = list(csv.DictReader(handle))
 
     assert {"section": "contract", "name": "spot", "value": "100.0"} in rows
+    assert {"section": "contract", "name": "monte_carlo_seed", "value": "7"} in rows
     assert any(
         row["section"] == "price:black_scholes" and row["name"] == "price" for row in rows
     )
@@ -227,6 +237,45 @@ def test_compare_command_writes_csv_report(tmp_path: Path) -> None:
 
     assert float(delta_row["value"]) == pytest.approx(0.6368306512, rel=1e-6)
     assert float(implied_vol_row["value"]) == pytest.approx(0.2, rel=1e-9)
+
+
+def test_compare_command_is_reproducible_for_same_seed() -> None:
+    command = [
+        sys.executable,
+        "-m",
+        "options_pricer.cli",
+        "compare",
+        "--spot",
+        "100",
+        "--strike",
+        "100",
+        "--rate",
+        "0.05",
+        "--volatility",
+        "0.2",
+        "--maturity",
+        "1",
+        "--type",
+        "call",
+        "--steps",
+        "150",
+        "--paths",
+        "5000",
+        "--seed",
+        "11",
+    ]
+
+    first = subprocess.run(command, check=True, capture_output=True, text=True)
+    second = subprocess.run(command, check=True, capture_output=True, text=True)
+
+    first_monte_carlo_line = next(
+        line for line in first.stdout.splitlines() if line.startswith("Monte Carlo")
+    )
+    second_monte_carlo_line = next(
+        line for line in second.stdout.splitlines() if line.startswith("Monte Carlo")
+    )
+
+    assert first_monte_carlo_line.split()[:4] == second_monte_carlo_line.split()[:4]
 
 
 def test_tree_command_prints_option_value() -> None:

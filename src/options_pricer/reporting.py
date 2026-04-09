@@ -37,6 +37,7 @@ class ComparisonReport:
     spec: OptionSpec
     tree_steps: int
     monte_carlo_paths: int
+    monte_carlo_seed: int
     price_rows: tuple[PriceComparison, ...]
     analytic_greeks: Greeks
     market_comparison: MarketComparison | None = None
@@ -47,12 +48,13 @@ def build_comparison_report(
     *,
     tree_steps: int,
     monte_carlo_paths: int,
+    monte_carlo_seed: int = 42,
     market_price: float | None = None,
 ) -> ComparisonReport:
     analytic_price, analytic_runtime = _timed_call(lambda: black_scholes_price(spec))
     tree_price, tree_runtime = _timed_call(lambda: binomial_tree_price(spec, steps=tree_steps))
     monte_carlo_result, monte_carlo_runtime = _timed_call(
-        lambda: monte_carlo_price(spec, paths=monte_carlo_paths)
+        lambda: monte_carlo_price(spec, paths=monte_carlo_paths, seed=monte_carlo_seed)
     )
 
     price_rows = (
@@ -93,6 +95,7 @@ def build_comparison_report(
         spec=spec,
         tree_steps=tree_steps,
         monte_carlo_paths=monte_carlo_paths,
+        monte_carlo_seed=monte_carlo_seed,
         price_rows=price_rows,
         analytic_greeks=greeks(spec),
         market_comparison=market_comparison,
@@ -111,6 +114,7 @@ def render_text_report(report: ComparisonReport) -> str:
         f"Type: {report.spec.option_type}",
         f"Tree steps: {report.tree_steps}",
         f"Monte Carlo paths: {report.monte_carlo_paths}",
+        f"Monte Carlo seed: {report.monte_carlo_seed}",
         "",
         "Price Comparison",
         "Model           Price       Abs Error   Rel Error   Runtime (ms)",
@@ -187,6 +191,7 @@ def _write_contract_rows(writer: Any, report: ComparisonReport) -> None:
         "type": report.spec.option_type,
         "tree_steps": report.tree_steps,
         "monte_carlo_paths": report.monte_carlo_paths,
+        "monte_carlo_seed": report.monte_carlo_seed,
     }
     for name, value in contract_values.items():
         writer.writerow(["contract", name, value])

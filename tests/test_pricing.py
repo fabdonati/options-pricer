@@ -188,9 +188,15 @@ def test_implied_volatility_returns_zero_for_intrinsic_value_prices() -> None:
 
 
 def test_comparison_report_uses_black_scholes_as_baseline(vanilla_call: OptionSpec) -> None:
-    report = build_comparison_report(vanilla_call, tree_steps=150, monte_carlo_paths=5_000)
+    report = build_comparison_report(
+        vanilla_call,
+        tree_steps=150,
+        monte_carlo_paths=5_000,
+        monte_carlo_seed=7,
+    )
 
     assert report.price_rows[0].model == "Black-Scholes"
+    assert report.monte_carlo_seed == 7
     assert report.price_rows[0].absolute_error_vs_black_scholes == 0.0
     assert report.price_rows[0].relative_error_vs_black_scholes == 0.0
     assert report.price_rows[1].absolute_error_vs_black_scholes >= 0.0
@@ -207,6 +213,7 @@ def test_comparison_report_market_section_round_trips_implied_vol(
         vanilla_call,
         tree_steps=150,
         monte_carlo_paths=5_000,
+        monte_carlo_seed=7,
         market_price=market_price,
     )
 

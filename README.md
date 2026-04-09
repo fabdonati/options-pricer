@@ -56,19 +56,19 @@ optprice tree --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 
 Compare analytic, tree, and Monte Carlo prices:
 
 ```bash
-optprice compare --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000
+optprice compare --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000 --seed 42
 ```
 
 Compare models for a dividend-paying option and include an implied-vol section from a market price:
 
 ```bash
-optprice compare --spot 100 --strike 100 --rate 0.05 --dividend-yield 0.02 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000 --market-price 9.227005508154036
+optprice compare --spot 100 --strike 100 --rate 0.05 --dividend-yield 0.02 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000 --seed 42 --market-price 9.227005508154036
 ```
 
 Write the comparison report to CSV while still printing the terminal summary:
 
 ```bash
-optprice compare --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000 --report-output reports/compare.csv
+optprice compare --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000 --seed 42 --report-output reports/compare.csv
 ```
 
 ## Package usage
@@ -98,3 +98,4 @@ sigma = implied_volatility(price, spec)
 - Binomial tree support is limited to European exercise in this stage
 - Monte Carlo is designed as a comparison baseline, not a low-latency engine
 - Runtime values in `compare` are rough in-process diagnostics, not benchmark-quality timings
+- Use `--seed` on `compare` when you want reproducible Monte Carlo rows from the CLI
