@@ -84,6 +84,71 @@ The CSV contains:
 For a simple convergence sanity check, compare a few `compare` runs while increasing `--steps`
 and keeping `--seed` fixed for Monte Carlo.
 
+## How to read the comparison outputs
+
+The repo now exposes three different analysis views:
+
+- `compare`
+  - answers how the three pricing methods differ for one contract
+  - Black-Scholes is the analytic reference
+  - binomial-tree and Monte Carlo rows are measured relative to that baseline
+  - runtime values are useful for quick diagnostics, not formal benchmarking
+- `compare --report-output`
+  - writes the same comparison as a flat CSV so the output can be inspected in spreadsheets or downstream scripts
+- `sweep`
+  - answers how model prices and approximation error move when one input changes across a range
+
+The most useful columns in the sweep CSV are:
+
+- `black_scholes`
+  - the analytic reference price at each point
+- `binomial_tree`
+  - the lattice estimate at the same point
+- `monte_carlo`
+  - the simulation estimate at the same point
+- `tree_error_vs_black_scholes`
+  - approximation error from the tree
+- `monte_carlo_error_vs_black_scholes`
+  - approximation error from Monte Carlo
+
+For a quick plot-ready workflow, generate a sweep CSV and inspect the first rows:
+
+```bash
+optprice sweep \
+  --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call \
+  --axis volatility --start 0.15 --stop 0.35 --points 5 \
+  --steps 200 --paths 20000 --seed 42 \
+  --output reports/vol_sweep.csv
+
+sed -n '1,10p' reports/vol_sweep.csv
+```
+
+If you want a quick visual comparison, this minimal script turns that CSV into a price and error plot:
+
+```bash
+python - <<'PY'
+import csv
+from pathlib import Path
+
+source = Path("reports/vol_sweep.csv")
+with source.open(newline="", encoding="utf-8") as handle:
+    rows = list(csv.DictReader(handle))
+
+for row in rows:
+    print(
+        row["value"],
+        row["black_scholes"],
+        row["binomial_tree"],
+        row["monte_carlo"],
+        row["tree_error_vs_black_scholes"],
+        row["monte_carlo_error_vs_black_scholes"],
+    )
+PY
+```
+
+That output is intentionally simple: the repo gives you a clean numerical table first, and that table
+is already in the right shape for plotting or convergence notebooks.
+
 ## Package usage
 
 ```python
