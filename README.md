@@ -4,12 +4,6 @@
 analytic Black-Scholes formulas, a Cox-Ross-Rubinstein binomial tree, and Monte Carlo
 simulation. The pricing inputs include an optional continuous dividend yield.
 
-## Why this project
-
-Pricing code is a good place to show numerical discipline: clear assumptions, reference-value
-tests, and simple comparison tooling. This repo focuses on the parts that are easy to audit
-and useful in interviews or small research workflows.
-
 ## Features
 
 - Black-Scholes pricing for calls and puts
