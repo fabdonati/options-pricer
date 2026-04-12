@@ -278,6 +278,112 @@ def test_compare_command_is_reproducible_for_same_seed() -> None:
     assert first_monte_carlo_line.split()[:4] == second_monte_carlo_line.split()[:4]
 
 
+def test_sweep_command_writes_csv_table(tmp_path: Path) -> None:
+    output_path = tmp_path / "spot_sweep.csv"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "options_pricer.cli",
+            "sweep",
+            "--spot",
+            "100",
+            "--strike",
+            "100",
+            "--rate",
+            "0.05",
+            "--volatility",
+            "0.2",
+            "--maturity",
+            "1",
+            "--type",
+            "call",
+            "--axis",
+            "spot",
+            "--start",
+            "90",
+            "--stop",
+            "110",
+            "--points",
+            "3",
+            "--steps",
+            "150",
+            "--paths",
+            "5000",
+            "--seed",
+            "7",
+            "--output",
+            str(output_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Wrote 3 sweep rows" in result.stdout
+    with output_path.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert len(rows) == 3
+    assert rows[0]["axis"] == "spot"
+    assert rows[0]["value"] == "90.0"
+    assert rows[1]["value"] == "100.0"
+    assert "tree_error_vs_black_scholes" in rows[0]
+    assert "monte_carlo_error_vs_black_scholes" in rows[0]
+
+
+def test_sweep_command_is_reproducible_for_same_seed(tmp_path: Path) -> None:
+    first_output = tmp_path / "first.csv"
+    second_output = tmp_path / "second.csv"
+    base_command = [
+        sys.executable,
+        "-m",
+        "options_pricer.cli",
+        "sweep",
+        "--spot",
+        "100",
+        "--strike",
+        "100",
+        "--rate",
+        "0.05",
+        "--volatility",
+        "0.2",
+        "--maturity",
+        "1",
+        "--type",
+        "call",
+        "--axis",
+        "volatility",
+        "--start",
+        "0.15",
+        "--stop",
+        "0.25",
+        "--points",
+        "3",
+        "--steps",
+        "150",
+        "--paths",
+        "5000",
+        "--seed",
+        "11",
+    ]
+
+    subprocess.run(
+        base_command + ["--output", str(first_output)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        base_command + ["--output", str(second_output)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert first_output.read_text(encoding="utf-8") == second_output.read_text(encoding="utf-8")
+
+
 def test_tree_command_prints_option_value() -> None:
     result = subprocess.run(
         [

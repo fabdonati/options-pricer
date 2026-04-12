@@ -65,6 +65,25 @@ Write the comparison report to CSV while still printing the terminal summary:
 optprice compare --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --steps 200 --paths 20000 --seed 42 --report-output reports/compare.csv
 ```
 
+Sweep spot across a range and export a plot-ready comparison table:
+
+```bash
+optprice sweep --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --axis spot --start 90 --stop 110 --points 5 --steps 200 --paths 20000 --seed 42 --output reports/spot_sweep.csv
+```
+
+The CSV contains:
+
+- `axis`
+- `value`
+- `black_scholes`
+- `binomial_tree`
+- `monte_carlo`
+- `tree_error_vs_black_scholes`
+- `monte_carlo_error_vs_black_scholes`
+
+For a simple convergence sanity check, compare a few `compare` runs while increasing `--steps`
+and keeping `--seed` fixed for Monte Carlo.
+
 ## Package usage
 
 ```python

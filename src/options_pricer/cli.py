@@ -9,6 +9,7 @@ from options_pricer.black_scholes import black_scholes_price
 from options_pricer.implied_vol import implied_volatility
 from options_pricer.models import OptionSpec, OptionType
 from options_pricer.reporting import build_comparison_report, render_text_report, write_csv_report
+from options_pricer.sweep import run_sweep, write_sweep_csv
 
 
 def main() -> None:
@@ -35,6 +36,20 @@ def main() -> None:
     compare_parser.add_argument("--seed", type=int, default=42)
     compare_parser.add_argument("--market-price", type=float)
     compare_parser.add_argument("--report-output", type=Path)
+    sweep_parser = _add_common_option_args(
+        subparsers.add_parser(
+            "sweep",
+            help="Sweep spot or volatility and export a model comparison table",
+        )
+    )
+    sweep_parser.add_argument("--axis", choices=("spot", "volatility"), required=True)
+    sweep_parser.add_argument("--start", type=float, required=True)
+    sweep_parser.add_argument("--stop", type=float, required=True)
+    sweep_parser.add_argument("--points", type=int, required=True)
+    sweep_parser.add_argument("--steps", type=int, default=200)
+    sweep_parser.add_argument("--paths", type=int, default=20_000)
+    sweep_parser.add_argument("--seed", type=int, default=42)
+    sweep_parser.add_argument("--output", type=Path, required=True)
 
     args = parser.parse_args()
     spec = _spec_from_args(args)
@@ -45,6 +60,22 @@ def main() -> None:
         print(f"{implied_volatility(args.market_price, spec):.6f}")
     elif args.command == "tree":
         print(f"{binomial_tree_price(spec, steps=args.steps):.6f}")
+    elif args.command == "sweep":
+        rows = run_sweep(
+            spec,
+            axis=args.axis,
+            start=args.start,
+            stop=args.stop,
+            points=args.points,
+            tree_steps=args.steps,
+            monte_carlo_paths=args.paths,
+            monte_carlo_seed=args.seed,
+        )
+        write_sweep_csv(rows, args.output)
+        print(
+            f"Wrote {len(rows)} sweep rows to {args.output} "
+            f"for axis={args.axis} over [{args.start}, {args.stop}]"
+        )
     else:
         report = build_comparison_report(
             spec,

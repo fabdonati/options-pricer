@@ -9,6 +9,7 @@ from options_pricer.implied_vol import implied_volatility
 from options_pricer.models import OptionSpec
 from options_pricer.monte_carlo import monte_carlo_price
 from options_pricer.reporting import build_comparison_report
+from options_pricer.sweep import run_sweep
 
 
 @pytest.fixture
@@ -220,3 +221,46 @@ def test_comparison_report_market_section_round_trips_implied_vol(
     assert report.market_comparison is not None
     assert report.market_comparison.implied_volatility == pytest.approx(0.2, rel=1e-6)
     assert report.market_comparison.residual_vs_black_scholes == pytest.approx(0.0, abs=1e-9)
+
+
+def test_run_sweep_supports_spot_axis(vanilla_call: OptionSpec) -> None:
+    rows = run_sweep(
+        vanilla_call,
+        axis="spot",
+        start=90.0,
+        stop=110.0,
+        points=3,
+        tree_steps=150,
+        monte_carlo_paths=5_000,
+        monte_carlo_seed=7,
+    )
+
+    assert [row.value for row in rows] == pytest.approx([90.0, 100.0, 110.0])
+    assert rows[0].axis == "spot"
+    assert rows[1].black_scholes == pytest.approx(10.450583572185565)
+    assert rows[1].binomial_tree == pytest.approx(rows[1].black_scholes, abs=0.1)
+
+
+def test_run_sweep_is_reproducible_for_same_seed(vanilla_call: OptionSpec) -> None:
+    first = run_sweep(
+        vanilla_call,
+        axis="volatility",
+        start=0.15,
+        stop=0.25,
+        points=3,
+        tree_steps=150,
+        monte_carlo_paths=5_000,
+        monte_carlo_seed=7,
+    )
+    second = run_sweep(
+        vanilla_call,
+        axis="volatility",
+        start=0.15,
+        stop=0.25,
+        points=3,
+        tree_steps=150,
+        monte_carlo_paths=5_000,
+        monte_carlo_seed=7,
+    )
+
+    assert first == second
