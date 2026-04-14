@@ -412,3 +412,97 @@ def test_tree_command_prints_option_value() -> None:
     )
 
     assert float(result.stdout.strip()) == pytest.approx(10.450584, abs=0.05)
+
+
+def test_mc_report_command_writes_csv_and_svg(tmp_path: Path) -> None:
+    csv_path = tmp_path / "mc_report.csv"
+    chart_path = tmp_path / "mc_report.svg"
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "options_pricer.cli",
+            "mc-report",
+            "--spot",
+            "100",
+            "--strike",
+            "100",
+            "--rate",
+            "0.05",
+            "--volatility",
+            "0.2",
+            "--maturity",
+            "1",
+            "--type",
+            "call",
+            "--path-grid",
+            "1000,5000,20000",
+            "--seed",
+            "7",
+            "--report-output",
+            str(csv_path),
+            "--chart-output",
+            str(chart_path),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert "Monte Carlo Diagnostics" in result.stdout
+    assert "Path counts: 1000, 5000, 20000" in result.stdout
+    assert f"Wrote Monte Carlo diagnostics CSV to {csv_path}" in result.stdout
+    assert f"Wrote Monte Carlo diagnostics chart to {chart_path}" in result.stdout
+
+    with csv_path.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert len(rows) == 3
+    assert rows[0]["paths"] == "1000"
+    assert "standard_error" in rows[0]
+    assert "ci_lower_95" in rows[0]
+    assert "ci_upper_95" in rows[0]
+    assert chart_path.read_text(encoding="utf-8").startswith("<svg")
+
+
+def test_mc_report_command_is_reproducible_for_same_seed(tmp_path: Path) -> None:
+    first_output = tmp_path / "first.csv"
+    second_output = tmp_path / "second.csv"
+    base_command = [
+        sys.executable,
+        "-m",
+        "options_pricer.cli",
+        "mc-report",
+        "--spot",
+        "100",
+        "--strike",
+        "100",
+        "--rate",
+        "0.05",
+        "--volatility",
+        "0.2",
+        "--maturity",
+        "1",
+        "--type",
+        "call",
+        "--path-grid",
+        "1000,5000,20000",
+        "--seed",
+        "11",
+    ]
+
+    subprocess.run(
+        base_command + ["--report-output", str(first_output)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        base_command + ["--report-output", str(second_output)],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    assert first_output.read_text(encoding="utf-8") == second_output.read_text(encoding="utf-8")

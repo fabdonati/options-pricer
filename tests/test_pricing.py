@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from options_pricer.binomial_tree import binomial_tree_price
@@ -7,7 +9,11 @@ from options_pricer.black_scholes import black_scholes_price
 from options_pricer.greeks import greeks
 from options_pricer.implied_vol import implied_volatility
 from options_pricer.models import OptionSpec
-from options_pricer.monte_carlo import monte_carlo_price
+from options_pricer.monte_carlo import monte_carlo_estimate, monte_carlo_price
+from options_pricer.monte_carlo_report import (
+    build_monte_carlo_report,
+    write_monte_carlo_report_chart,
+)
 from options_pricer.reporting import build_comparison_report
 from options_pricer.sweep import run_sweep
 
@@ -119,6 +125,14 @@ def test_monte_carlo_tracks_dividend_adjusted_analytic_price() -> None:
     simulated_price = monte_carlo_price(spec, paths=25_000, seed=7)
 
     assert simulated_price == pytest.approx(analytic_price, abs=0.35)
+
+
+def test_monte_carlo_estimate_includes_confidence_interval(vanilla_call: OptionSpec) -> None:
+    estimate = monte_carlo_estimate(vanilla_call, paths=5_000, seed=7)
+
+    assert estimate.ci_lower_95 < estimate.price < estimate.ci_upper_95
+    assert estimate.sample_variance > 0.0
+    assert estimate.standard_error > 0.0
 
 
 def test_binomial_tree_tracks_analytic_price_for_call(vanilla_call: OptionSpec) -> None:
@@ -264,3 +278,27 @@ def test_run_sweep_is_reproducible_for_same_seed(vanilla_call: OptionSpec) -> No
     )
 
     assert first == second
+
+
+def test_monte_carlo_report_rows_capture_convergence(vanilla_call: OptionSpec) -> None:
+    report = build_monte_carlo_report(vanilla_call, path_counts=[1_000, 5_000, 20_000], seed=7)
+
+    assert [row.paths for row in report.rows] == [1_000, 5_000, 20_000]
+    assert (
+        report.rows[0].ci_lower_95
+        < report.rows[0].monte_carlo_price
+        < report.rows[0].ci_upper_95
+    )
+    assert report.rows[-1].standard_error < report.rows[0].standard_error
+    assert report.rows[-1].black_scholes_price == pytest.approx(10.450583572185565)
+
+
+def test_monte_carlo_report_chart_writes_svg(tmp_path: Path, vanilla_call: OptionSpec) -> None:
+    report = build_monte_carlo_report(vanilla_call, path_counts=[1_000, 5_000, 20_000], seed=7)
+    chart_path = tmp_path / "mc_report.svg"
+
+    write_monte_carlo_report_chart(report, chart_path)
+
+    contents = chart_path.read_text(encoding="utf-8")
+    assert contents.startswith("<svg")
+    assert "Monte Carlo convergence diagnostics" in contents

@@ -11,6 +11,7 @@ simulation. The pricing inputs include an optional continuous dividend yield.
 - Greeks computation
 - Implied-volatility solving with Newton-Raphson
 - Monte Carlo pricing baseline for comparison
+- Monte Carlo diagnostics with confidence intervals and convergence charts
 - CLI for pricing, implied vol, and model comparison reports
 
 ## Install
@@ -81,6 +82,26 @@ The CSV contains:
 - `tree_error_vs_black_scholes`
 - `monte_carlo_error_vs_black_scholes`
 
+Run Monte Carlo convergence diagnostics across multiple simulation sizes:
+
+```bash
+optprice mc-report --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call --path-grid 1000,5000,10000,20000,50000 --seed 42 --report-output reports/mc_report.csv --chart-output reports/mc_report.svg
+```
+
+The Monte Carlo diagnostics CSV contains:
+
+- `paths`
+- `seed`
+- `monte_carlo_price`
+- `black_scholes_price`
+- `abs_error_vs_black_scholes`
+- `sample_variance`
+- `standard_error`
+- `ci_lower_95`
+- `ci_upper_95`
+
+`--path-grid` is the convergence grid. Each value is the number of simulated price paths used in one Monte Carlo run. Larger path counts should reduce sampling noise and narrow the confidence interval, but they cost more runtime.
+
 For a simple convergence sanity check, compare a few `compare` runs while increasing `--steps`
 and keeping `--seed` fixed for Monte Carlo.
 
@@ -97,6 +118,10 @@ The repo now exposes three different analysis views:
   - writes the same comparison as a flat CSV so the output can be inspected in spreadsheets or downstream scripts
 - `sweep`
   - answers how model prices and approximation error move when one input changes across a range
+- `mc-report`
+  - answers how the Monte Carlo estimator stabilizes as the number of simulated paths increases
+  - reports uncertainty explicitly through standard error and a 95% confidence interval
+  - exports both a flat CSV and an SVG convergence chart
 
 The most useful columns in the sweep CSV are:
 
@@ -149,6 +174,25 @@ PY
 That output is intentionally simple: the repo gives you a clean numerical table first, and that table
 is already in the right shape for plotting or convergence notebooks.
 
+For a self-contained convergence workflow, generate the Monte Carlo diagnostics CSV and SVG:
+
+```bash
+optprice mc-report \
+  --spot 100 --strike 100 --rate 0.05 --volatility 0.2 --maturity 1 --type call \
+  --path-grid 1000,5000,10000,20000,50000 \
+  --seed 42 \
+  --report-output reports/mc_report.csv \
+  --chart-output reports/mc_report.svg
+
+sed -n '1,10p' reports/mc_report.csv
+```
+
+The chart plots:
+
+- the Monte Carlo price estimate at each path count
+- the 95% confidence band around that estimate
+- the Black-Scholes benchmark as a reference line
+
 ## Package usage
 
 ```python
@@ -177,3 +221,4 @@ sigma = implied_volatility(price, spec)
 - Monte Carlo is designed as a comparison baseline, not a low-latency engine
 - Runtime values in `compare` are rough in-process diagnostics, not benchmark-quality timings
 - Use `--seed` on `compare` when you want reproducible Monte Carlo rows from the CLI
+- `mc-report` uses repeated full reruns at each path count, so it is a convergence diagnostic rather than a variance-reduction engine
