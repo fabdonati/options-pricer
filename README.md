@@ -105,12 +105,11 @@ The Monte Carlo diagnostics CSV contains:
 For a simple convergence sanity check, compare a few `compare` runs while increasing `--steps`
 and keeping `--seed` fixed for Monte Carlo.
 
-## How to read the comparison outputs
+## Outputs
 
-The repo now exposes three different analysis views:
+The repo exposes three main analysis views:
 
 - `compare`
-  - answers how the three pricing methods differ for one contract
   - Black-Scholes is the analytic reference
   - binomial-tree and Monte Carlo rows are measured relative to that baseline
   - runtime values are useful for quick diagnostics, not formal benchmarking
@@ -171,8 +170,7 @@ for row in rows:
 PY
 ```
 
-That output is intentionally simple: the repo gives you a clean numerical table first, and that table
-is already in the right shape for plotting or convergence notebooks.
+The output is a flat numerical table that can be loaded directly into plotting code or a notebook.
 
 For a self-contained convergence workflow, generate the Monte Carlo diagnostics CSV and SVG:
 
@@ -217,7 +215,7 @@ sigma = implied_volatility(price, spec)
 
 - v0.1.0 only supports vanilla European options
 - Dividend support is modeled as a continuous yield input rather than sourced reference data
-- Binomial tree support is limited to European exercise in this stage
+- Binomial tree support is limited to European exercise
 - Monte Carlo is designed as a comparison baseline, not a low-latency engine
 - Runtime values in `compare` are rough in-process diagnostics, not benchmark-quality timings
 - Use `--seed` on `compare` when you want reproducible Monte Carlo rows from the CLI
